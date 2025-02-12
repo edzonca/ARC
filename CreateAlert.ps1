@@ -1,16 +1,17 @@
-# Variables
-$resourceGroupName = "YourResourceGroupName"
-$actionGroupName = "YourActionGroupName"
-$alertRuleName = "YourAlertRuleName"
-$emailAddress = "youremail@example.com"
-$logAnalyticsWorkspaceId = "YourLogAnalyticsWorkspaceId"
-$alertQuery = "Your Kusto Query Here"  # Replace with your query
+param (
+    [string]$resourceGroupName,
+    [string]$actionGroupName,
+    [string]$alertRuleName,
+    [string]$emailAddress,
+    [string]$logAnalyticsWorkspaceId,
+    [string]$alertQuery
+)
 
 # Step 1: Create Action Group
 $actionGroup = New-AzActionGroup `
     -ResourceGroupName $resourceGroupName `
     -Name $actionGroupName `
-    -ShortName "ARCShortName" `
+    -ShortName "AGShortName" `
     -Receiver `
         @{Name="EmailReceiver"; EmailAddress=$emailAddress; Type="Email"}
 
