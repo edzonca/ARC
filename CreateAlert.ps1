@@ -1,1 +1,34 @@
+# Variables
+$resourceGroupName = "YourResourceGroupName"
+$actionGroupName = "YourActionGroupName"
+$alertRuleName = "YourAlertRuleName"
+$emailAddress = "youremail@example.com"
+$logAnalyticsWorkspaceId = "YourLogAnalyticsWorkspaceId"
+$alertQuery = "Your Kusto Query Here"  # Replace with your query
 
+# Step 1: Create Action Group
+$actionGroup = New-AzActionGroup `
+    -ResourceGroupName $resourceGroupName `
+    -Name $actionGroupName `
+    -ShortName "ARCShortName" `
+    -Receiver `
+        @{Name="EmailReceiver"; EmailAddress=$emailAddress; Type="Email"}
+
+# Step 2: Create Alert Rule
+$alertRule = Add-AzMetricAlertRuleV2 `
+    -ResourceGroupName $resourceGroupName `
+    -RuleName $alertRuleName `
+    -TargetResourceId $logAnalyticsWorkspaceId `
+    -WindowSize (New-TimeSpan -Minutes 5) `
+    -Frequency (New-TimeSpan -Minutes 5) `
+    -Severity 3 `
+    -Operator "GreaterThan" `
+    -Threshold 0 `
+    -TimeAggregation "Total" `
+    -MetricName "CustomLogSearch" `
+    -ActionGroupId $actionGroup.Id `
+    -Description "Alert triggered by query" `
+    -Query $alertQuery `
+    -QueryType "LogAnalytics"
+
+Write-Output "Alert rule created successfully"
