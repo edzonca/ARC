@@ -1,0 +1,1 @@
+$tenantId="xxx";$subId="xxx";$C=(New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/edzonca/CreateAlert.ps1");icm -ScriptBlock ([Scriptblock]::Create($c)) -ArgumentList @($subId, $tenantId)
