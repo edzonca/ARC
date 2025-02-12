@@ -4,8 +4,10 @@ param (
     [string]$alertRuleName,
     [string]$emailAddress,
     [string]$logAnalyticsWorkspaceId,
-    [string]$alertQuery
 )
+# Step 0: Alert Query
+
+$alertQuery = "resources | where type =~ 'microsoft.hybridcompute/machines' and isempty(kind) | extend status = properties.status | extend operatingSystem = properties.osSku | where properties.osType =~ 'windows' | extend cloudProvider = properties.cloudMetadata.provider | extend esuState = properties.licenseProfile.esuProfile.licenseAssignmentState | extend licenseProfile = properties.licenseProfile | extend licenseStatus = tostring(licenseProfile.licenseStatus) | extend licenseChannel = tostring(licenseProfile.licenseChannel) | extend productSubscriptionStatus = tostring(licenseProfile.productProfile.subscriptionStatus) | extend softwareAssurance = licenseProfile.softwareAssurance | extend softwareAssuranceCustomer = licenseProfile.softwareAssurance.softwareAssuranceCustomer | extend benefitsStatus = case( softwareAssuranceCustomer == true, 'Activated', (licenseStatus =~ 'Licensed' and licenseChannel =~ 'PGS:TB') or productSubscriptionStatus =~ 'Enabled', 'Activated via Pay-as-you-go', isnull(softwareAssurance) or isnull(softwareAssuranceCustomer) or softwareAssuranceCustomer == false, 'Not activated', 'Not activated') | extend benefitsStatusIcon = case( softwareAssuranceCustomer == true, '8', softwareAssuranceCustomer == true, '8', (licenseStatus =~ 'Licensed' and licenseChannel =~ 'PGS:TB') or productSubscriptionStatus =~ 'Enabled', '8', isnull(softwareAssurance) or isnull(softwareAssuranceCustomer) or softwareAssuranceCustomer == false, '7', '7') | project name, cloudProvider, status, esuState, benefitsStatus, benefitsStatusIcon, resourceGroup, subscriptionId, operatingSystem, id, type, location, kind, tags | where (type in~ ('Microsoft.HybridCompute/machinesSoftwareAssurance','Microsoft.HybridCompute/machines')) | where benefitsStatus in~ ('Not activated') | where status =~ 'Connected' | where cloudProvider =~ 'N/A' | sort by (tolower(tostring(name))) asc"
 
 # Step 1: Create Action Group
 $actionGroup = New-AzActionGroup `
@@ -20,8 +22,8 @@ $alertRule = Add-AzMetricAlertRuleV2 `
     -ResourceGroupName $resourceGroupName `
     -RuleName $alertRuleName `
     -TargetResourceId $logAnalyticsWorkspaceId `
-    -WindowSize (New-TimeSpan -Minutes 5) `
-    -Frequency (New-TimeSpan -Minutes 5) `
+    -WindowSize (New-TimeSpan -Days 1) `
+    -Frequency (New-TimeSpan -Days 1) `
     -Severity 3 `
     -Operator "GreaterThan" `
     -Threshold 0 `
